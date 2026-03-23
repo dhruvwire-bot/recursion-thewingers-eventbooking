@@ -7,10 +7,11 @@ import useTheme from '../../store/useTheme';
 
 const navLinks = [
   { to: '/', label: 'Book Tickets' },
-  { to: '/list-event', label: 'List an Event' },
+  { to: '/movies', label: 'Book Movies' },
+  { to: '/calendar', label: 'Calendar' },
   { to: '/resell-tickets', label: 'Resell Tickets' },
   { to: '/my-bookings', label: 'My Bookings' },
-  { to: '/admin', label: 'Admin Dashboard' },
+  { to: '/admin', label: 'Admin' },
 ];
 
 export default function Navbar() {
@@ -19,6 +20,7 @@ export default function Navbar() {
   const { mode, toggle } = useTheme();
   const [showProfile, setShowProfile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hoveredLink, setHoveredLink] = useState(null);
 
   const isDark = mode === 'dark';
 
@@ -42,24 +44,35 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop Nav */}
-        <div className="hidden lg:flex items-center gap-1">
+        {/* Desktop Nav — bridgeworx hover (same funky font for all) */}
+        <div className="hidden lg:flex items-center gap-0">
           {navLinks.map((link) => {
             const isActive = location.pathname === link.to;
+            const isHovered = hoveredLink === link.to;
+
             return (
               <Link
                 key={link.to}
                 to={link.to}
-                className="relative px-4 py-2 text-[13px] font-medium no-underline transition-colors duration-300 uppercase tracking-wider"
+                className="relative px-4 py-2 no-underline transition-all duration-300"
                 style={{
-                  color: isActive ? '#7DA8CF' : isDark ? '#999' : '#666',
+                  color: isActive ? '#7DA8CF' : isHovered ? '#A78BFA' : isDark ? '#999' : '#666',
+                  fontFamily: isHovered ? "'Permanent Marker', cursive" : "'Space Grotesk', sans-serif",
+                  fontSize: isHovered ? '15px' : '12px',
+                  fontWeight: isHovered || isActive ? 700 : 500,
+                  letterSpacing: isHovered ? '0em' : '0.06em',
+                  textTransform: isHovered ? 'none' : 'uppercase',
+                  transform: isHovered ? 'scale(1.08)' : 'scale(1)',
+                  display: 'inline-block',
                 }}
+                onMouseEnter={() => setHoveredLink(link.to)}
+                onMouseLeave={() => setHoveredLink(null)}
               >
                 {link.label}
                 {isActive && (
                   <motion.div
                     layoutId="nav-underline"
-                    className="absolute bottom-0 left-4 right-4 h-[2px]"
+                    className="absolute bottom-0 left-4 right-4 h-0.5"
                     style={{ background: '#7DA8CF' }}
                   />
                 )}
@@ -70,7 +83,6 @@ export default function Navbar() {
 
         {/* Right side */}
         <div className="flex items-center gap-3">
-          {/* Theme Toggle */}
           <button
             onClick={toggle}
             className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer border"
@@ -79,12 +91,10 @@ export default function Navbar() {
               borderColor: isDark ? '#333' : '#ddd',
               color: isDark ? '#7DA8CF' : '#666',
             }}
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          {/* Search */}
           <button
             className="w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer border-none bg-transparent"
             style={{ color: isDark ? '#999' : '#666' }}
@@ -92,7 +102,6 @@ export default function Navbar() {
             <Search className="w-4 h-4" />
           </button>
 
-          {/* Profile */}
           {isLoggedIn ? (
             <div className="relative">
               <button
@@ -102,10 +111,7 @@ export default function Navbar() {
               >
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center border"
-                  style={{
-                    background: isDark ? '#141414' : '#f5f5f5',
-                    borderColor: isDark ? '#333' : '#ddd',
-                  }}
+                  style={{ background: isDark ? '#141414' : '#f5f5f5', borderColor: isDark ? '#333' : '#ddd' }}
                 >
                   <User className="w-4 h-4" />
                 </div>
@@ -117,39 +123,24 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     className="absolute right-0 mt-2 w-48 rounded-lg shadow-2xl py-2 z-50 border"
-                    style={{
-                      background: isDark ? '#0a0a0a' : '#fff',
-                      borderColor: isDark ? '#222' : '#e5e5e5',
-                    }}
+                    style={{ background: isDark ? '#0a0a0a' : '#fff', borderColor: isDark ? '#222' : '#e5e5e5' }}
                   >
                     <div className="px-4 py-2 border-b" style={{ borderColor: isDark ? '#222' : '#eee' }}>
                       <p className="text-sm font-medium" style={{ color: isDark ? '#fff' : '#111' }}>{user?.name || 'User'}</p>
-                      <p className="text-xs" style={{ color: isDark ? '#666' : '#999' }}>{user?.email || 'user@email.com'}</p>
+                      <p className="text-xs" style={{ color: isDark ? '#666' : '#999' }}>{user?.email}</p>
                     </div>
-                    <Link to="/my-bookings" onClick={() => setShowProfile(false)} className="block px-4 py-2 text-sm no-underline hover:opacity-80" style={{ color: isDark ? '#ccc' : '#333' }}>
-                      My Bookings
-                    </Link>
-                    <button
-                      onClick={() => { logout(); setShowProfile(false); }}
-                      className="w-full text-left px-4 py-2 text-sm cursor-pointer bg-transparent border-none"
-                      style={{ color: '#EF4444' }}
-                    >
-                      Sign Out
-                    </button>
+                    <Link to="/my-bookings" onClick={() => setShowProfile(false)} className="block px-4 py-2 text-sm no-underline" style={{ color: isDark ? '#ccc' : '#333' }}>My Bookings</Link>
+                    <button onClick={() => { logout(); setShowProfile(false); }} className="w-full text-left px-4 py-2 text-sm cursor-pointer bg-transparent border-none" style={{ color: '#EF4444' }}>Sign Out</button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           ) : (
-            <Link
-              to="/auth/login"
-              className="btn-outline text-xs py-2 px-4 no-underline hidden sm:inline-flex"
-            >
+            <Link to="/auth/login" className="btn-outline text-xs py-2 px-4 no-underline hidden sm:inline-flex">
               Sign In
             </Link>
           )}
 
-          {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="lg:hidden cursor-pointer bg-transparent border-none"
@@ -168,24 +159,14 @@ export default function Navbar() {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="lg:hidden overflow-hidden border-t"
-            style={{
-              background: isDark ? '#000' : '#fff',
-              borderColor: isDark ? '#222' : '#e5e5e5',
-            }}
+            style={{ background: isDark ? '#000' : '#fff', borderColor: isDark ? '#222' : '#e5e5e5' }}
           >
             <div className="px-6 py-4 space-y-1">
               {navLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  onClick={() => setMobileOpen(false)}
+                <Link key={link.to} to={link.to} onClick={() => setMobileOpen(false)}
                   className="block py-2.5 text-sm font-medium no-underline uppercase tracking-wider"
-                  style={{
-                    color: location.pathname === link.to ? '#7DA8CF' : isDark ? '#999' : '#666',
-                  }}
-                >
-                  {link.label}
-                </Link>
+                  style={{ color: location.pathname === link.to ? '#7DA8CF' : isDark ? '#999' : '#666' }}
+                >{link.label}</Link>
               ))}
             </div>
           </motion.div>

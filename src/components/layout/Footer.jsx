@@ -1,4 +1,4 @@
-import { Flame, Mail, Phone, Globe, ArrowRight } from 'lucide-react';
+import { Flame, Mail, Phone, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import useTheme from '../../store/useTheme';
 
@@ -8,58 +8,74 @@ export default function Footer() {
 
   return (
     <footer
-      className="border-t mt-auto transition-colors duration-300"
+      className="border-t mt-auto transition-colors duration-300 relative"
       style={{
         background: isDark ? '#000' : '#fafafa',
         borderColor: isDark ? '#1a1a1a' : '#e5e5e5',
       }}
     >
-      {/* Newsletter strip */}
+      {/* List Your Show Banner (BookMyShow style) */}
       <div
-        className="border-b transition-colors"
+        className="border-b"
+        style={{
+          borderColor: isDark ? '#1a1a1a' : '#e5e5e5',
+          background: isDark ? '#0a0a0a' : '#f5f5f5',
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(125,168,207,0.1)' }}>
+              <span className="text-lg">🏠</span>
+            </div>
+            <div>
+              <span className="font-bold text-sm" style={{ color: isDark ? '#fff' : '#111' }}>List your Show</span>
+              <span className="text-sm ml-2" style={{ color: isDark ? '#666' : '#999' }}>
+                Got a show, event, activity or a great experience? Partner with us & get listed on CookMyShow
+              </span>
+            </div>
+          </div>
+          <Link
+            to="/list-event"
+            className="no-underline shrink-0 py-2.5 px-6 rounded-lg font-bold text-sm uppercase tracking-wider transition-all"
+            style={{
+              background: '#E11D48',
+              color: '#fff',
+            }}
+          >
+            Contact today!
+          </Link>
+        </div>
+      </div>
+
+      {/* Services strip */}
+      <div
+        className="border-b"
         style={{ borderColor: isDark ? '#1a1a1a' : '#e5e5e5' }}
       >
-        <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <h3
-              className="text-xl font-bold font-heading mb-1"
-              style={{ color: isDark ? '#fff' : '#111' }}
-            >
-              Stay in the loop
-            </h3>
-            <p className="text-sm" style={{ color: isDark ? '#666' : '#999' }}>
-              Get notified about new events and exclusive offers.
-            </p>
-          </div>
-          <div className="flex gap-2 w-full md:w-auto">
-            <input
-              type="email"
-              placeholder="your@email.com"
-              className="flex-1 md:w-64 px-4 py-2.5 rounded text-sm border focus:outline-none transition-colors"
-              style={{
-                background: isDark ? '#0a0a0a' : '#fff',
-                borderColor: isDark ? '#222' : '#ddd',
-                color: isDark ? '#fff' : '#333',
-              }}
-            />
-            <button className="btn-primary flex items-center gap-1 text-sm">
-              Subscribe <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+          {[
+            { icon: '🎧', label: '24/7 CUSTOMER CARE' },
+            { icon: '📧', label: 'RESEND BOOKING CONFIRMATION' },
+            { icon: '📰', label: 'SUBSCRIBE TO THE NEWSLETTER' },
+          ].map((item) => (
+            <div key={item.label} className="flex flex-col items-center gap-2 group cursor-pointer">
+              <span className="text-2xl group-hover:scale-110 transition-transform">{item.icon}</span>
+              <span className="text-[10px] uppercase tracking-[0.2em] font-medium" style={{ color: isDark ? '#666' : '#999' }}>
+                {item.label}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Main footer */}
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-6 py-12 relative z-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Flame className="w-6 h-6" style={{ color: '#7DA8CF' }} />
-              <span
-                className="font-heading font-bold text-lg"
-                style={{ color: isDark ? '#fff' : '#111' }}
-              >
+              <span className="font-heading font-bold text-lg" style={{ color: isDark ? '#fff' : '#111' }}>
                 CookMyShow
               </span>
             </div>
@@ -71,10 +87,7 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h4
-              className="text-xs font-bold uppercase tracking-widest mb-4"
-              style={{ color: isDark ? '#555' : '#aaa' }}
-            >
+            <h4 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: isDark ? '#555' : '#aaa' }}>
               Contact
             </h4>
             <ul className="space-y-3 text-sm list-none p-0 m-0" style={{ color: isDark ? '#888' : '#666' }}>
@@ -86,24 +99,21 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4
-              className="text-xs font-bold uppercase tracking-widest mb-4"
-              style={{ color: isDark ? '#555' : '#aaa' }}
-            >
+            <h4 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: isDark ? '#555' : '#aaa' }}>
               Quick Links
             </h4>
             <ul className="space-y-2 text-sm list-none p-0 m-0">
               {[
                 { to: '/', label: 'Browse Events' },
-                { to: '/list-event', label: 'List an Event' },
                 { to: '/resell-tickets', label: 'Resale Market' },
                 { to: '/my-bookings', label: 'My Bookings' },
+                { to: '/list-event', label: 'List an Event' },
               ].map((link) => (
                 <li key={link.to}>
                   <Link
                     to={link.to}
                     className="no-underline transition-colors duration-300 hover:opacity-100"
-                    style={{ color: isDark ? '#666' : '#888', }}
+                    style={{ color: isDark ? '#666' : '#888' }}
                   >
                     {link.label}
                   </Link>
@@ -114,25 +124,28 @@ export default function Footer() {
 
           {/* Social */}
           <div>
-            <h4
-              className="text-xs font-bold uppercase tracking-widest mb-4"
-              style={{ color: isDark ? '#555' : '#aaa' }}
-            >
+            <h4 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: isDark ? '#555' : '#aaa' }}>
               Follow Us
             </h4>
             <div className="flex gap-3">
-              {['Twitter', 'Instagram', 'LinkedIn'].map((s) => (
+              {[
+                { name: 'Facebook', color: '#1877F2' },
+                { name: 'Instagram', color: '#E4405F' },
+                { name: 'LinkedIn', color: '#A78BFA' },
+              ].map((s) => (
                 <a
-                  key={s}
+                  key={s.name}
                   href="#"
-                  className="w-9 h-9 rounded-full flex items-center justify-center border transition-all duration-300 no-underline text-xs font-medium"
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 no-underline text-sm font-bold"
                   style={{
-                    borderColor: isDark ? '#222' : '#ddd',
-                    color: isDark ? '#666' : '#999',
                     background: 'transparent',
+                    border: `1px solid ${isDark ? '#222' : '#ddd'}`,
+                    color: isDark ? '#666' : '#999',
                   }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = s.color; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = s.color; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = isDark ? '#666' : '#999'; e.currentTarget.style.borderColor = isDark ? '#222' : '#ddd'; }}
                 >
-                  {s[0]}
+                  {s.name[0]}
                 </a>
               ))}
             </div>

@@ -46,26 +46,35 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  .dark body, body.dark, .dark {
-    --tw-bg: #000000;
-    --tw-text: #e5e5e5;
-    --tw-text-muted: #999999;
-    --tw-text-heading: #ffffff;
-  }
-
-  .light body, body.light, .light {
-    --tw-bg: #ffffff;
-    --tw-text: #333333;
-    --tw-text-muted: #666666;
-    --tw-text-heading: #111111;
-  }
-
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
   }
 
   * {
     scrollbar-width: thin;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar for dark/light */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+  }
+
+  /* Selection highlight */
+  ::selection {
+    background: rgba(125, 168, 207, 0.3);
+    color: inherit;
   }
 }
 
@@ -78,7 +87,8 @@
   }
   .btn-primary:hover {
     background: #9BC2E6;
-    transform: scale(1.02);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(125, 168, 207, 0.3);
   }
 
   .btn-danger {
@@ -93,6 +103,8 @@
   .btn-outline:hover {
     background: #7DA8CF;
     color: #000;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(125, 168, 207, 0.2);
   }
 
   .btn-green {
@@ -128,4 +140,83 @@
     filter: grayscale(0%);
     transform: scale(1.05);
   }
+}
+
+/* ───── 3D TILT EFFECT ───── */
+.tilt-card {
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+.tilt-card:hover {
+  box-shadow: 0 25px 60px rgba(125, 168, 207, 0.15), 0 0 0 1px rgba(125, 168, 207, 0.1);
+}
+
+/* ───── GLASS MORPHISM ───── */
+.glass {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* ───── INFINITE MARQUEE RIBBON ───── */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* ───── GLOW PULSE ───── */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(125, 168, 207, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(125, 168, 207, 0.4); }
+}
+.glow-pulse {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* ───── SHIMMER LOADING EFFECT ───── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent 30%, rgba(125, 168, 207, 0.08) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+/* ───── FLOATING ANIMATION ───── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+.float-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ───── GRADIENT TEXT ───── */
+.gradient-text {
+  background: linear-gradient(135deg, #7DA8CF, #A78BFA, #67E8F9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ───── NOISE TEXTURE OVERLAY ───── */
+.noise-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
 }

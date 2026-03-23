@@ -1,8 +1,16 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Upload, Plus, Trash2, Eye } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, Plus, Trash2, Eye, ChevronRight, ChevronLeft, Check, Music, MapPin, Users, Tag, Image } from 'lucide-react';
 import useTheme from '../store/useTheme';
 import toast from 'react-hot-toast';
+
+const STEPS = [
+  { id: 1, label: 'Event Details', icon: Music },
+  { id: 2, label: 'Date & Venue', icon: MapPin },
+  { id: 3, label: 'Capacity & Layout', icon: Users },
+  { id: 4, label: 'Pricing Tiers', icon: Tag },
+  { id: 5, label: 'Media & Review', icon: Image },
+];
 
 function SeatLayoutPreview({ count, isDark }) {
   const cols = Math.min(14, Math.ceil(Math.sqrt(count)));
@@ -37,34 +45,127 @@ function SeatLayoutPreview({ count, isDark }) {
   );
 }
 
+function StepIndicator({ steps, currentStep, isDark }) {
+  return (
+    <div className="flex items-center justify-between mb-12">
+      {steps.map((step, i) => {
+        const isActive = currentStep === step.id;
+        const isCompleted = currentStep > step.id;
+        const Icon = step.icon;
+
+        return (
+          <div key={step.id} className="flex items-center flex-1">
+            <div className="flex flex-col items-center relative">
+              <motion.div
+                animate={{
+                  background: isActive ? '#7DA8CF' : isCompleted ? '#4ADE80' : (isDark ? '#1a1a1a' : '#eee'),
+                  borderColor: isActive ? '#7DA8CF' : isCompleted ? '#4ADE80' : (isDark ? '#333' : '#ddd'),
+                }}
+                className="w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all"
+              >
+                {isCompleted ? (
+                  <Check className="w-5 h-5" style={{ color: '#000' }} />
+                ) : (
+                  <Icon className="w-5 h-5" style={{ color: isActive ? '#000' : (isDark ? '#555' : '#999') }} />
+                )}
+              </motion.div>
+              <span
+                className="text-[10px] uppercase tracking-wider font-bold mt-2 text-center whitespace-nowrap"
+                style={{ color: isActive ? '#7DA8CF' : isCompleted ? '#4ADE80' : (isDark ? '#444' : '#bbb') }}
+              >
+                {step.label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div
+                className="flex-1 h-px mx-3 mt-[-20px]"
+                style={{ background: isCompleted ? '#4ADE80' : (isDark ? '#1a1a1a' : '#eee') }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const slideVariants = {
+  enter: (dir) => ({ x: dir > 0 ? 200 : -200, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir) => ({ x: dir > 0 ? -200 : 200, opacity: 0 }),
+};
+
 export default function ListEvent() {
   const { mode } = useTheme();
   const isDark = mode === 'dark';
 
+  const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState(1);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    category: 'Live Show',
+    artists: '',
     date: '',
     time: '',
     venue: '',
-    totalSeats: 100,
+    city: '',
+    totalSeats: 200,
+    floors: 1,
+    aisles: 2,
     image: null,
+    imageName: '',
   });
   const [tiers, setTiers] = useState([
-    { name: 'General', price: '' },
-    { name: 'VIP', price: '' },
-    { name: 'Premium', price: '' },
+    { name: 'General', price: '', seats: '' },
+    { name: 'VIP', price: '', seats: '' },
+    { name: 'Premium', price: '', seats: '' },
   ]);
 
   const updateField = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
 
-  const addTier = () => setTiers([...tiers, { name: '', price: '' }]);
+  const addTier = () => setTiers([...tiers, { name: '', price: '', seats: '' }]);
   const removeTier = (i) => setTiers(tiers.filter((_, idx) => idx !== i));
   const updateTier = (i, field, value) => setTiers(tiers.map((t, idx) => (idx === i ? { ...t, [field]: value } : t)));
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    toast.success('Event listed successfully!');
+  const goNext = () => {
+    if (step < 5) {
+      setDirection(1);
+      setStep(step + 1);
+    }
+  };
+
+  const goBack = () => {
+    if (step > 1) {
+      setDirection(-1);
+      setStep(step - 1);
+    }
+  };
+
+  const handleSubmit = () => {
+    toast.success('Event listed successfully! 🎉');
+    setStep(1);
+    setFormData({
+      name: '', description: '', category: 'Live Show', artists: '',
+      date: '', time: '', venue: '', city: '', totalSeats: 200,
+      floors: 1, aisles: 2, image: null, imageName: '',
+    });
+    setTiers([
+      { name: 'General', price: '', seats: '' },
+      { name: 'VIP', price: '', seats: '' },
+      { name: 'Premium', price: '', seats: '' },
+    ]);
+  };
+
+  const canNext = () => {
+    switch (step) {
+      case 1: return formData.name && formData.description && formData.category;
+      case 2: return formData.date && formData.time && formData.venue;
+      case 3: return formData.totalSeats >= 10;
+      case 4: return tiers.length > 0 && tiers.every((t) => t.name && t.price);
+      case 5: return true;
+      default: return false;
+    }
   };
 
   const inputStyle = {
@@ -74,9 +175,10 @@ export default function ListEvent() {
   };
 
   const labelStyle = { color: isDark ? '#555' : '#aaa' };
+  const cardBg = { background: isDark ? '#0a0a0a' : '#fafafa', borderColor: isDark ? '#1a1a1a' : '#eee' };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-16">
+    <div className="max-w-3xl mx-auto px-6 py-16">
       <div className="mb-10">
         <p className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: '#7DA8CF' }}>
           Create
@@ -87,172 +189,427 @@ export default function ListEvent() {
         >
           List an Event
         </h2>
+        <p className="text-sm mt-2" style={{ color: isDark ? '#666' : '#999' }}>
+          Complete each step to get your event live on CookMyShow.
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-10">
-          {/* Left: Form */}
-          <div className="space-y-5">
-            <div>
-              <label className="block text-xs uppercase tracking-wider mb-1.5" style={labelStyle}>Event Name *</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => updateField('name', e.target.value)}
-                placeholder="e.g., Arijit Singh Live Concert"
-                className="w-full rounded border px-4 py-2.5 text-sm focus:outline-none"
-                style={inputStyle}
-              />
-            </div>
+      <StepIndicator steps={STEPS} currentStep={step} isDark={isDark} />
 
-            <div>
-              <label className="block text-xs uppercase tracking-wider mb-1.5" style={labelStyle}>Description *</label>
-              <textarea
-                required
-                rows={4}
-                value={formData.description}
-                onChange={(e) => updateField('description', e.target.value)}
-                placeholder="Describe your event..."
-                className="w-full rounded border px-4 py-2.5 text-sm focus:outline-none resize-none"
-                style={inputStyle}
-              />
-            </div>
+      <div className="rounded-xl border p-8 mb-8" style={cardBg}>
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={step}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
+            {/* Step 1: Event Details */}
+            {step === 1 && (
+              <div className="space-y-5">
+                <h3 className="text-lg font-bold font-heading mb-1" style={{ color: isDark ? '#fff' : '#111' }}>
+                  Tell us about your event
+                </h3>
+                <p className="text-xs mb-6" style={{ color: isDark ? '#555' : '#999' }}>
+                  Name, description, category, and performing artists.
+                </p>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs uppercase tracking-wider mb-1.5" style={labelStyle}>Date *</label>
-                <input
-                  type="date"
-                  required
-                  value={formData.date}
-                  onChange={(e) => updateField('date', e.target.value)}
-                  className="w-full rounded border px-4 py-2.5 text-sm focus:outline-none"
-                  style={inputStyle}
-                />
+                <div>
+                  <label className="block text-xs uppercase tracking-wider mb-1.5 font-bold" style={labelStyle}>Event Name *</label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => updateField('name', e.target.value)}
+                    placeholder="e.g., Arijit Singh Live Concert"
+                    className="w-full rounded-lg border px-4 py-3 text-sm focus:outline-none"
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider mb-1.5 font-bold" style={labelStyle}>Category *</label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Live Show', 'Comedy', 'Sports', 'Conference', 'Workshop', 'Festival', 'Theatre'].map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => updateField('category', cat)}
+                        className="text-xs uppercase tracking-wider px-4 py-2 rounded-full cursor-pointer transition-all border"
+                        style={{
+                          background: formData.category === cat ? '#7DA8CF' : 'transparent',
+                          color: formData.category === cat ? '#000' : (isDark ? '#888' : '#666'),
+                          borderColor: formData.category === cat ? '#7DA8CF' : (isDark ? '#222' : '#ddd'),
+                          fontWeight: formData.category === cat ? 700 : 500,
+                        }}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider mb-1.5 font-bold" style={labelStyle}>Artists / Performers</label>
+                  <input
+                    type="text"
+                    value={formData.artists}
+                    onChange={(e) => updateField('artists', e.target.value)}
+                    placeholder="e.g., Arijit Singh, Shreya Ghoshal"
+                    className="w-full rounded-lg border px-4 py-3 text-sm focus:outline-none"
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider mb-1.5 font-bold" style={labelStyle}>Description *</label>
+                  <textarea
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => updateField('description', e.target.value)}
+                    placeholder="Describe your event in detail..."
+                    className="w-full rounded-lg border px-4 py-3 text-sm focus:outline-none resize-none"
+                    style={inputStyle}
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs uppercase tracking-wider mb-1.5" style={labelStyle}>Time *</label>
-                <input
-                  type="time"
-                  required
-                  value={formData.time}
-                  onChange={(e) => updateField('time', e.target.value)}
-                  className="w-full rounded border px-4 py-2.5 text-sm focus:outline-none"
-                  style={inputStyle}
-                />
-              </div>
-            </div>
+            )}
 
-            <div>
-              <label className="block text-xs uppercase tracking-wider mb-1.5" style={labelStyle}>Venue *</label>
-              <input
-                type="text"
-                required
-                value={formData.venue}
-                onChange={(e) => updateField('venue', e.target.value)}
-                placeholder="e.g., Mumbai Stadium"
-                className="w-full rounded border px-4 py-2.5 text-sm focus:outline-none"
-                style={inputStyle}
-              />
-            </div>
+            {/* Step 2: Date & Venue */}
+            {step === 2 && (
+              <div className="space-y-5">
+                <h3 className="text-lg font-bold font-heading mb-1" style={{ color: isDark ? '#fff' : '#111' }}>
+                  When & Where
+                </h3>
+                <p className="text-xs mb-6" style={{ color: isDark ? '#555' : '#999' }}>
+                  Set the date, time, and venue for your event.
+                </p>
 
-            {/* Image upload */}
-            <div>
-              <label className="block text-xs uppercase tracking-wider mb-1.5" style={labelStyle}>Cover Image</label>
-              <div
-                className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors"
-                style={{ borderColor: isDark ? '#222' : '#ddd' }}
-              >
-                <Upload className="w-8 h-8 mx-auto mb-2" style={{ color: isDark ? '#444' : '#bbb' }} />
-                <p className="text-sm" style={{ color: isDark ? '#555' : '#999' }}>Drag & drop or click to upload</p>
-                <p className="text-xs mt-1" style={{ color: isDark ? '#444' : '#bbb' }}>PNG, JPG up to 5MB</p>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs uppercase tracking-wider mb-1.5" style={labelStyle}>Total Seats *</label>
-              <input
-                type="number"
-                required
-                min={10}
-                max={1000}
-                value={formData.totalSeats}
-                onChange={(e) => updateField('totalSeats', Number(e.target.value))}
-                className="w-full rounded border px-4 py-2.5 text-sm focus:outline-none"
-                style={inputStyle}
-              />
-            </div>
-
-            {/* Pricing Tiers */}
-            <div>
-              <label className="block text-xs uppercase tracking-wider mb-2" style={labelStyle}>Pricing Tiers</label>
-              <div className="space-y-3">
-                {tiers.map((tier, i) => (
-                  <div key={i} className="flex gap-3 items-center">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider mb-1.5 font-bold" style={labelStyle}>Date *</label>
                     <input
-                      type="text"
-                      value={tier.name}
-                      onChange={(e) => updateTier(i, 'name', e.target.value)}
-                      placeholder="Tier name"
-                      className="flex-1 rounded border px-4 py-2 text-sm focus:outline-none"
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => updateField('date', e.target.value)}
+                      className="w-full rounded-lg border px-4 py-3 text-sm focus:outline-none"
                       style={inputStyle}
                     />
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: isDark ? '#555' : '#999' }}>₹</span>
-                      <input
-                        type="number"
-                        value={tier.price}
-                        onChange={(e) => updateTier(i, 'price', e.target.value)}
-                        placeholder="Price"
-                        className="w-32 rounded border pl-7 pr-3 py-2 text-sm focus:outline-none"
-                        style={inputStyle}
-                      />
-                    </div>
-                    {tiers.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeTier(i)}
-                        className="bg-transparent border-none cursor-pointer transition-colors"
-                        style={{ color: isDark ? '#555' : '#bbb' }}
-                        onMouseOver={(e) => { e.currentTarget.style.color = '#EF4444'; }}
-                        onMouseOut={(e) => { e.currentTarget.style.color = isDark ? '#555' : '#bbb'; }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
-                ))}
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider mb-1.5 font-bold" style={labelStyle}>Time *</label>
+                    <input
+                      type="time"
+                      value={formData.time}
+                      onChange={(e) => updateField('time', e.target.value)}
+                      className="w-full rounded-lg border px-4 py-3 text-sm focus:outline-none"
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider mb-1.5 font-bold" style={labelStyle}>Venue *</label>
+                  <input
+                    type="text"
+                    value={formData.venue}
+                    onChange={(e) => updateField('venue', e.target.value)}
+                    placeholder="e.g., Mumbai Stadium"
+                    className="w-full rounded-lg border px-4 py-3 text-sm focus:outline-none"
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider mb-1.5 font-bold" style={labelStyle}>City</label>
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => updateField('city', e.target.value)}
+                    placeholder="e.g., Mumbai"
+                    className="w-full rounded-lg border px-4 py-3 text-sm focus:outline-none"
+                    style={inputStyle}
+                  />
+                </div>
+
+                {/* Venue preview */}
+                {formData.venue && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-lg border p-4 flex items-center gap-3"
+                    style={cardBg}
+                  >
+                    <MapPin className="w-5 h-5" style={{ color: '#7DA8CF' }} />
+                    <div>
+                      <p className="text-sm font-bold" style={{ color: isDark ? '#fff' : '#111' }}>{formData.venue}</p>
+                      {formData.city && <p className="text-xs" style={{ color: isDark ? '#555' : '#999' }}>{formData.city}</p>}
+                    </div>
+                  </motion.div>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={addTier}
-                className="mt-3 text-xs uppercase tracking-wider flex items-center gap-1 bg-transparent border-none cursor-pointer font-bold"
-                style={{ color: '#7DA8CF' }}
-              >
-                <Plus className="w-4 h-4" /> Add Tier
-              </button>
-            </div>
+            )}
 
-            <button
-              type="submit"
-              className="w-full py-3.5 rounded font-bold text-sm uppercase tracking-wider border-none cursor-pointer"
-              style={{ background: '#7DA8CF', color: '#000' }}
-            >
-              List Event
-            </button>
-          </div>
+            {/* Step 3: Capacity & Layout */}
+            {step === 3 && (
+              <div className="space-y-5">
+                <h3 className="text-lg font-bold font-heading mb-1" style={{ color: isDark ? '#fff' : '#111' }}>
+                  Capacity & Seating
+                </h3>
+                <p className="text-xs mb-6" style={{ color: isDark ? '#555' : '#999' }}>
+                  Configure total seats and venue layout.
+                </p>
 
-          {/* Right: Seat Preview */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2" style={{ color: '#7DA8CF' }}>
-              <Eye className="w-4 h-4" />
-              Seat Layout Preview
-            </h3>
-            <SeatLayoutPreview count={formData.totalSeats} isDark={isDark} />
-          </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-wider mb-1.5 font-bold" style={labelStyle}>Total Seats *</label>
+                  <input
+                    type="number"
+                    min={10}
+                    max={5000}
+                    value={formData.totalSeats}
+                    onChange={(e) => updateField('totalSeats', Number(e.target.value))}
+                    className="w-full rounded-lg border px-4 py-3 text-sm focus:outline-none"
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider mb-1.5 font-bold" style={labelStyle}>Floors</label>
+                    <select
+                      value={formData.floors}
+                      onChange={(e) => updateField('floors', Number(e.target.value))}
+                      className="w-full rounded-lg border px-4 py-3 text-sm focus:outline-none"
+                      style={inputStyle}
+                    >
+                      {[1, 2, 3].map((n) => <option key={n} value={n}>{n} Floor{n > 1 ? 's' : ''}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider mb-1.5 font-bold" style={labelStyle}>Aisles</label>
+                    <select
+                      value={formData.aisles}
+                      onChange={(e) => updateField('aisles', Number(e.target.value))}
+                      className="w-full rounded-lg border px-4 py-3 text-sm focus:outline-none"
+                      style={inputStyle}
+                    >
+                      {[1, 2, 3].map((n) => <option key={n} value={n}>{n} Aisle{n > 1 ? 's' : ''}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <h4 className="text-sm font-bold uppercase tracking-wider flex items-center gap-2 mb-3" style={{ color: '#7DA8CF' }}>
+                    <Eye className="w-4 h-4" /> Seat Layout Preview
+                  </h4>
+                  <SeatLayoutPreview count={formData.totalSeats} isDark={isDark} />
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Pricing Tiers */}
+            {step === 4 && (
+              <div className="space-y-5">
+                <h3 className="text-lg font-bold font-heading mb-1" style={{ color: isDark ? '#fff' : '#111' }}>
+                  Ticket Pricing
+                </h3>
+                <p className="text-xs mb-6" style={{ color: isDark ? '#555' : '#999' }}>
+                  Define your ticket tiers with names, prices, and seat allocation.
+                </p>
+
+                <div className="space-y-3">
+                  {tiers.map((tier, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="rounded-lg border p-4"
+                      style={cardBg}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs uppercase tracking-wider font-bold" style={{ color: '#7DA8CF' }}>
+                          Tier {i + 1}
+                        </span>
+                        {tiers.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeTier(i)}
+                            className="bg-transparent border-none cursor-pointer transition-colors"
+                            style={{ color: isDark ? '#555' : '#bbb' }}
+                            onMouseOver={(e) => { e.currentTarget.style.color = '#EF4444'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.color = isDark ? '#555' : '#bbb'; }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-wider mb-1" style={labelStyle}>Name *</label>
+                          <input
+                            type="text"
+                            value={tier.name}
+                            onChange={(e) => updateTier(i, 'name', e.target.value)}
+                            placeholder="e.g., VIP"
+                            className="w-full rounded border px-3 py-2 text-sm focus:outline-none"
+                            style={inputStyle}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-wider mb-1" style={labelStyle}>Price (₹) *</label>
+                          <input
+                            type="number"
+                            value={tier.price}
+                            onChange={(e) => updateTier(i, 'price', e.target.value)}
+                            placeholder="999"
+                            className="w-full rounded border px-3 py-2 text-sm focus:outline-none"
+                            style={inputStyle}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-wider mb-1" style={labelStyle}>Seats</label>
+                          <input
+                            type="number"
+                            value={tier.seats}
+                            onChange={(e) => updateTier(i, 'seats', e.target.value)}
+                            placeholder="50"
+                            className="w-full rounded border px-3 py-2 text-sm focus:outline-none"
+                            style={inputStyle}
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={addTier}
+                  className="text-xs uppercase tracking-wider flex items-center gap-1 bg-transparent border-none cursor-pointer font-bold"
+                  style={{ color: '#7DA8CF' }}
+                >
+                  <Plus className="w-4 h-4" /> Add Another Tier
+                </button>
+              </div>
+            )}
+
+            {/* Step 5: Media & Review */}
+            {step === 5 && (
+              <div className="space-y-5">
+                <h3 className="text-lg font-bold font-heading mb-1" style={{ color: isDark ? '#fff' : '#111' }}>
+                  Upload Media & Review
+                </h3>
+                <p className="text-xs mb-6" style={{ color: isDark ? '#555' : '#999' }}>
+                  Add a cover image and review all your event details.
+                </p>
+
+                {/* Image upload */}
+                <div>
+                  <label className="block text-xs uppercase tracking-wider mb-1.5 font-bold" style={labelStyle}>Cover Image</label>
+                  <div
+                    className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors"
+                    style={{ borderColor: isDark ? '#222' : '#ddd' }}
+                  >
+                    <Upload className="w-8 h-8 mx-auto mb-2" style={{ color: isDark ? '#444' : '#bbb' }} />
+                    <p className="text-sm" style={{ color: isDark ? '#555' : '#999' }}>Drag & drop or click to upload</p>
+                    <p className="text-xs mt-1" style={{ color: isDark ? '#444' : '#bbb' }}>PNG, JPG up to 5MB</p>
+                  </div>
+                </div>
+
+                {/* Review summary */}
+                <div className="rounded-lg border p-5 space-y-4" style={cardBg}>
+                  <h4 className="text-sm font-bold uppercase tracking-wider" style={{ color: '#7DA8CF' }}>
+                    Event Summary
+                  </h4>
+
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+                    <ReviewItem label="Event Name" value={formData.name} isDark={isDark} />
+                    <ReviewItem label="Category" value={formData.category} isDark={isDark} />
+                    <ReviewItem label="Artists" value={formData.artists || '—'} isDark={isDark} />
+                    <ReviewItem label="Date" value={formData.date || '—'} isDark={isDark} />
+                    <ReviewItem label="Time" value={formData.time || '—'} isDark={isDark} />
+                    <ReviewItem label="Venue" value={formData.venue || '—'} isDark={isDark} />
+                    <ReviewItem label="City" value={formData.city || '—'} isDark={isDark} />
+                    <ReviewItem label="Total Seats" value={String(formData.totalSeats)} isDark={isDark} />
+                  </div>
+
+                  <div className="border-t pt-3 mt-3" style={{ borderColor: isDark ? '#1a1a1a' : '#eee' }}>
+                    <p className="text-[10px] uppercase tracking-wider font-bold mb-2" style={labelStyle}>Pricing Tiers</p>
+                    <div className="space-y-1">
+                      {tiers.map((t, i) => (
+                        <div key={i} className="flex justify-between text-sm">
+                          <span style={{ color: isDark ? '#ccc' : '#444' }}>{t.name}</span>
+                          <span className="font-mono font-bold" style={{ color: '#7DA8CF' }}>₹{t.price || '0'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Navigation buttons */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={goBack}
+          disabled={step === 1}
+          className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider cursor-pointer bg-transparent border-none transition-opacity"
+          style={{ color: isDark ? '#888' : '#666', opacity: step === 1 ? 0.3 : 1 }}
+        >
+          <ChevronLeft className="w-4 h-4" /> Back
+        </button>
+
+        <div className="flex items-center gap-2">
+          {STEPS.map((s) => (
+            <div
+              key={s.id}
+              className="w-2 h-2 rounded-full transition-all"
+              style={{
+                background: step === s.id ? '#7DA8CF' : step > s.id ? '#4ADE80' : (isDark ? '#222' : '#ddd'),
+                transform: step === s.id ? 'scale(1.5)' : 'scale(1)',
+              }}
+            />
+          ))}
         </div>
-      </form>
+
+        {step < 5 ? (
+          <button
+            onClick={goNext}
+            disabled={!canNext()}
+            className="flex items-center gap-2 py-3 px-6 rounded-lg text-sm font-bold uppercase tracking-wider cursor-pointer border-none transition-all"
+            style={{
+              background: canNext() ? '#7DA8CF' : (isDark ? '#1a1a1a' : '#eee'),
+              color: canNext() ? '#000' : (isDark ? '#444' : '#bbb'),
+              opacity: canNext() ? 1 : 0.6,
+            }}
+          >
+            Next <ChevronRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            onClick={handleSubmit}
+            className="flex items-center gap-2 py-3 px-8 rounded-lg text-sm font-bold uppercase tracking-wider cursor-pointer border-none transition-all"
+            style={{ background: '#4ADE80', color: '#000' }}
+          >
+            <Check className="w-4 h-4" /> Publish Event
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReviewItem({ label, value, isDark }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wider font-bold" style={{ color: isDark ? '#444' : '#bbb' }}>{label}</p>
+      <p className="text-sm font-medium" style={{ color: isDark ? '#ccc' : '#333' }}>{value}</p>
     </div>
   );
 }

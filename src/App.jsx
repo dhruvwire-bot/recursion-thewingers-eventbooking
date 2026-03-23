@@ -12,6 +12,8 @@ import ResaleMarketplace from './pages/ResaleMarketplace';
 import Negotiation from './pages/Negotiation';
 import Waitlist from './pages/Waitlist';
 import AdminDashboard from './pages/AdminDashboard';
+import EventCalendar from './pages/EventCalendar';
+import Movies from './pages/Movies';
 import useTheme from './store/useTheme';
 
 export default function App() {
@@ -34,6 +36,8 @@ export default function App() {
             <Route path="/negotiation/:ticketId" element={<Negotiation />} />
             <Route path="/waitlist/:eventId" element={<Waitlist />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/calendar" element={<EventCalendar />} />
+            <Route path="/movies" element={<Movies />} />
           </Route>
         </Routes>
       </BrowserRouter>

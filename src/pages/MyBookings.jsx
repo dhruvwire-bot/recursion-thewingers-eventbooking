@@ -1,15 +1,308 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Ticket, X, ArrowRight } from 'lucide-react';
+import { Ticket, X, Calendar, MapPin, Clock, QrCode, Tag } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { sampleBookings } from '../data/events';
-import StatusBadge from '../components/shared/StatusBadge';
 import useTheme from '../store/useTheme';
 import toast from 'react-hot-toast';
+
+const statusConfig = {
+  upcoming: { color: '#7DA8CF', bg: 'rgba(125,168,207,0.12)', label: 'UPCOMING' },
+  completed: { color: '#4ADE80', bg: 'rgba(74,222,128,0.12)', label: 'COMPLETED' },
+  failed: { color: '#EF4444', bg: 'rgba(239,68,68,0.12)', label: 'CANCELLED' },
+};
+
+function TicketQRModal({ booking, isDark, onClose }) {
+  const bookingId = `CMS-${booking.id.toUpperCase()}`;
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.85, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.85, y: 20 }}
+        className="rounded-xl border p-8 max-w-sm w-full text-center"
+        style={{ background: isDark ? '#0a0a0a' : '#fff', borderColor: isDark ? '#1a1a1a' : '#eee' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: '#7DA8CF' }}>CookMyShow</p>
+        <h3 className="text-lg font-bold font-heading mb-1" style={{ color: isDark ? '#fff' : '#111' }}>{booking.eventTitle}</h3>
+        <p className="text-xs mb-5" style={{ color: isDark ? '#555' : '#999' }}>
+          {booking.date} &middot; {booking.location}
+        </p>
+
+        <div className="flex justify-center mb-5">
+          <div className="p-4 rounded-lg" style={{ background: isDark ? '#111' : '#f5f5f5' }}>
+            <QRCodeSVG
+              value={`cookmyshow://ticket/${bookingId}`}
+              size={160}
+              level="M"
+              bgColor="transparent"
+              fgColor={isDark ? '#fff' : '#111'}
+            />
+          </div>
+        </div>
+
+        <p className="text-xs font-mono font-bold mb-1" style={{ color: isDark ? '#ccc' : '#333' }}>{bookingId}</p>
+        <p className="text-xs mb-4" style={{ color: isDark ? '#444' : '#bbb' }}>
+          {booking.tier} &middot; {booking.seats.length} seat{booking.seats.length > 1 ? 's' : ''} &middot; Seats: {booking.seats.join(', ')}
+        </p>
+
+        <div className="flex gap-2 justify-center text-xs" style={{ color: isDark ? '#555' : '#999' }}>
+          <span className="px-3 py-1 rounded-full font-mono" style={{ background: isDark ? '#111' : '#f5f5f5' }}>
+            ₹{booking.total.toLocaleString()}
+          </span>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="mt-6 w-full py-2.5 rounded-lg font-bold text-sm uppercase tracking-wider border-none cursor-pointer"
+          style={{ background: '#7DA8CF', color: '#000' }}
+        >
+          Close
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function ResellModal({ booking, isDark, onClose }) {
+  const maxPrice = booking.total * 2;
+  const [resellPrice, setResellPrice] = useState(booking.total);
+
+  const handleList = () => {
+    toast.success(`Ticket listed for resale at ₹${resellPrice.toLocaleString()}`);
+    onClose();
+  };
+
+  const percent = ((resellPrice - Math.round(booking.total * 0.5)) / (maxPrice - Math.round(booking.total * 0.5))) * 100;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.85, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.85, y: 20 }}
+        className="rounded-xl border p-6 max-w-md w-full"
+        style={{ background: isDark ? '#0a0a0a' : '#fff', borderColor: isDark ? '#1a1a1a' : '#eee' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <Tag className="w-5 h-5" style={{ color: '#7DA8CF' }} />
+            <h3 className="text-lg font-bold font-heading" style={{ color: isDark ? '#fff' : '#111' }}>Resell Ticket</h3>
+          </div>
+          <button onClick={onClose} className="bg-transparent border-none cursor-pointer" style={{ color: isDark ? '#555' : '#999' }}>
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="rounded-lg p-4 mb-5" style={{ background: isDark ? '#111' : '#f5f5f5' }}>
+          <p className="font-semibold text-sm mb-1" style={{ color: isDark ? '#fff' : '#111' }}>{booking.eventTitle}</p>
+          <p className="text-xs" style={{ color: isDark ? '#555' : '#999' }}>
+            {booking.tier} &middot; Seats: {booking.seats.join(', ')} &middot; Bought at ₹{booking.total.toLocaleString()}
+          </p>
+        </div>
+
+        {/* Price input */}
+        <div className="mb-4">
+          <label className="block text-xs uppercase tracking-wider mb-2" style={{ color: isDark ? '#555' : '#aaa' }}>
+            Set your resale price
+          </label>
+          <div className="text-center mb-3">
+            <span className="text-3xl font-bold font-mono" style={{ color: '#7DA8CF' }}>
+              ₹{resellPrice.toLocaleString()}
+            </span>
+          </div>
+
+          {/* Slider */}
+          <div className="relative mb-2">
+            <div className="w-full h-2 rounded-full" style={{ background: isDark ? '#1a1a1a' : '#e5e5e5' }} />
+            <div
+              className="absolute top-0 left-0 h-2 rounded-full transition-all duration-100"
+              style={{ width: `${percent}%`, background: resellPrice > booking.total ? '#F59E0B' : '#4ADE80' }}
+            />
+            <input
+              type="range"
+              min={Math.round(booking.total * 0.5)}
+              max={maxPrice}
+              step={10}
+              value={resellPrice}
+              onChange={(e) => setResellPrice(Number(e.target.value))}
+              className="absolute top-0 left-0 w-full h-2 opacity-0 cursor-pointer"
+              style={{ margin: 0 }}
+            />
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 transition-all duration-100"
+              style={{
+                left: `calc(${percent}% - 10px)`,
+                background: isDark ? '#000' : '#fff',
+                borderColor: resellPrice > booking.total ? '#F59E0B' : '#4ADE80',
+                top: '4px',
+              }}
+            />
+          </div>
+
+          <div className="flex justify-between text-[10px] font-mono" style={{ color: isDark ? '#444' : '#bbb' }}>
+            <span>₹{Math.round(booking.total * 0.5)}</span>
+            <span>Original: ₹{booking.total}</span>
+            <span>Max 2x: ₹{maxPrice}</span>
+          </div>
+        </div>
+
+        {/* Price cap notice */}
+        <div className="rounded-lg p-3 mb-5 flex items-start gap-2" style={{ background: 'rgba(125,168,207,0.08)' }}>
+          <span className="text-xs" style={{ color: '#7DA8CF' }}>ℹ</span>
+          <p className="text-xs" style={{ color: isDark ? '#888' : '#666' }}>
+            Maximum resale price is capped at 2x the original price (₹{maxPrice.toLocaleString()}) to ensure fair pricing.
+          </p>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider cursor-pointer border"
+            style={{ background: 'transparent', borderColor: isDark ? '#333' : '#ddd', color: isDark ? '#ccc' : '#444' }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleList}
+            className="flex-1 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider border-none cursor-pointer"
+            style={{ background: '#7DA8CF', color: '#000' }}
+          >
+            List for ₹{resellPrice.toLocaleString()}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function BookingCard({ booking, isDark, onCancel, onQR, onResell }) {
+  const status = statusConfig[booking.status] || statusConfig.upcoming;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -30, scale: 0.95 }}
+      className="rounded-xl border overflow-hidden group"
+      style={{
+        background: isDark ? '#0a0a0a' : '#fff',
+        borderColor: isDark ? '#1a1a1a' : '#eee',
+      }}
+    >
+      <div className="flex flex-col md:flex-row">
+        {/* Image */}
+        <div className="relative w-full md:w-52 h-40 md:h-auto shrink-0 overflow-hidden">
+          <img
+            src={booking.image}
+            alt=""
+            className="w-full h-full object-cover transition-all duration-700"
+            style={{ filter: isDark ? 'grayscale(60%) brightness(0.7)' : 'grayscale(20%)' }}
+            onMouseOver={(e) => { e.currentTarget.style.filter = 'grayscale(0%) brightness(1)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+            onMouseOut={(e) => { e.currentTarget.style.filter = isDark ? 'grayscale(60%) brightness(0.7)' : 'grayscale(20%)'; e.currentTarget.style.transform = 'scale(1)'; }}
+          />
+          <div className="absolute top-3 left-3">
+            <span
+              className="text-[10px] font-bold uppercase tracking-[0.15em] px-3 py-1.5 rounded-sm"
+              style={{ background: status.bg, color: status.color, backdropFilter: 'blur(8px)' }}
+            >
+              {status.label}
+            </span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 p-5 flex flex-col justify-between">
+          <div>
+            <h4 className="text-lg font-bold font-heading mb-2" style={{ color: isDark ? '#fff' : '#111' }}>
+              {booking.eventTitle}
+            </h4>
+            <div className="flex flex-wrap gap-4 mb-3">
+              <span className="flex items-center gap-1.5 text-xs" style={{ color: isDark ? '#666' : '#999' }}>
+                <Calendar className="w-3.5 h-3.5" style={{ color: '#7DA8CF' }} /> {booking.date}
+              </span>
+              <span className="flex items-center gap-1.5 text-xs" style={{ color: isDark ? '#666' : '#999' }}>
+                <MapPin className="w-3.5 h-3.5" style={{ color: '#7DA8CF' }} /> {booking.location}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <span className="text-xs px-3 py-1 rounded-full font-mono" style={{ background: isDark ? '#111' : '#f5f5f5', color: isDark ? '#ccc' : '#444' }}>
+                {booking.tier}
+              </span>
+              <span className="text-xs px-3 py-1 rounded-full font-mono" style={{ background: isDark ? '#111' : '#f5f5f5', color: isDark ? '#ccc' : '#444' }}>
+                {booking.seats.length} seat{booking.seats.length > 1 ? 's' : ''}
+              </span>
+              <span className="text-xs px-3 py-1 rounded-full font-mono font-bold" style={{ background: 'rgba(125,168,207,0.1)', color: '#7DA8CF' }}>
+                ₹{booking.total.toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 pt-3" style={{ borderTop: `1px solid ${isDark ? '#1a1a1a' : '#f0f0f0'}` }}>
+            {booking.status === 'upcoming' && (
+              <>
+                <button
+                  onClick={() => onQR(booking)}
+                  className="text-xs uppercase tracking-wider py-2 px-4 rounded-lg border-none cursor-pointer font-bold flex items-center gap-1.5 transition-all"
+                  style={{ background: '#7DA8CF', color: '#000' }}
+                >
+                  <QrCode className="w-3.5 h-3.5" /> View Ticket
+                </button>
+                <button
+                  onClick={() => onResell(booking)}
+                  className="text-xs uppercase tracking-wider py-2 px-4 rounded-lg border cursor-pointer font-bold flex items-center gap-1.5 transition-all"
+                  style={{ background: 'transparent', borderColor: isDark ? '#333' : '#ddd', color: isDark ? '#ccc' : '#444' }}
+                >
+                  <Tag className="w-3.5 h-3.5" /> Resell
+                </button>
+                <button
+                  onClick={() => onCancel(booking.id)}
+                  className="text-xs uppercase tracking-wider py-2 px-4 rounded-lg border cursor-pointer font-bold transition-all"
+                  style={{ background: 'transparent', borderColor: 'rgba(239,68,68,0.3)', color: '#EF4444' }}
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+            {booking.status === 'completed' && (
+              <button
+                onClick={() => onQR(booking)}
+                className="text-xs uppercase tracking-wider py-2 px-4 rounded-lg border-none cursor-pointer font-bold flex items-center gap-1.5"
+                style={{ background: '#7DA8CF', color: '#000' }}
+              >
+                <Ticket className="w-3.5 h-3.5" /> e-Ticket
+              </button>
+            )}
+            {booking.status === 'failed' && (
+              <span className="text-xs italic" style={{ color: isDark ? '#555' : '#bbb' }}>Refund processed</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState(sampleBookings);
   const [tab, setTab] = useState('all');
   const [cancelModal, setCancelModal] = useState(null);
+  const [qrModal, setQrModal] = useState(null);
+  const [resellModal, setResellModal] = useState(null);
   const { mode } = useTheme();
   const isDark = mode === 'dark';
 
@@ -21,124 +314,82 @@ export default function MyBookings() {
     toast.success('Booking cancelled. Refund will be processed.');
   };
 
+  const tabCounts = {
+    all: bookings.length,
+    upcoming: bookings.filter((b) => b.status === 'upcoming').length,
+    completed: bookings.filter((b) => b.status === 'completed').length,
+    failed: bookings.filter((b) => b.status === 'failed').length,
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-16">
       <div className="mb-10">
-        <p className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: '#7DA8CF' }}>
-          Account
-        </p>
-        <h2
-          className="text-4xl md:text-5xl font-bold font-heading"
-          style={{ color: isDark ? '#fff' : '#111', letterSpacing: '-0.02em' }}
-        >
+        <p className="text-xs uppercase tracking-widest font-bold mb-2" style={{ color: '#7DA8CF' }}>Account</p>
+        <h2 className="text-4xl md:text-5xl font-bold font-heading" style={{ color: isDark ? '#fff' : '#111', letterSpacing: '-0.02em' }}>
           My Bookings
         </h2>
+        <p className="text-sm mt-2" style={{ color: isDark ? '#666' : '#999' }}>Manage your tickets and reservations</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-8">
+      <div className="flex gap-1 mb-8 p-1 rounded-lg" style={{ background: isDark ? '#0a0a0a' : '#f5f5f5' }}>
         {[
           { key: 'all', label: 'All' },
           { key: 'upcoming', label: 'Upcoming' },
           { key: 'completed', label: 'Completed' },
-          { key: 'failed', label: 'Failed' },
+          { key: 'failed', label: 'Cancelled' },
         ].map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className="text-xs uppercase tracking-wider px-5 py-2.5 rounded cursor-pointer transition-all border"
+            className="text-xs uppercase tracking-wider px-5 py-2.5 rounded-md cursor-pointer transition-all border-none flex items-center gap-2"
             style={{
-              background: tab === t.key ? '#7DA8CF' : 'transparent',
-              color: tab === t.key ? '#000' : (isDark ? '#888' : '#666'),
-              borderColor: tab === t.key ? '#7DA8CF' : (isDark ? '#222' : '#ddd'),
+              background: tab === t.key ? (isDark ? '#141414' : '#fff') : 'transparent',
+              color: tab === t.key ? (isDark ? '#fff' : '#111') : (isDark ? '#666' : '#999'),
               fontWeight: tab === t.key ? 700 : 500,
+              boxShadow: tab === t.key ? (isDark ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)') : 'none',
             }}
           >
             {t.label}
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full" style={{ background: tab === t.key ? 'rgba(125,168,207,0.15)' : 'transparent', color: tab === t.key ? '#7DA8CF' : (isDark ? '#444' : '#ccc') }}>
+              {tabCounts[t.key]}
+            </span>
           </button>
         ))}
       </div>
 
-      {/* Booking List */}
       <div className="space-y-4">
         <AnimatePresence>
-          {filtered.map((booking, i) => (
-            <motion.div
+          {filtered.map((booking) => (
+            <BookingCard
               key={booking.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ delay: i * 0.05 }}
-              className="rounded-lg border p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 transition-all"
-              style={{
-                borderColor: isDark ? '#1a1a1a' : '#eee',
-                background: isDark ? '#0a0a0a' : '#fafafa',
-              }}
-            >
-              {/* Thumbnail */}
-              <img
-                src={booking.image}
-                alt=""
-                className="w-16 h-16 rounded object-cover flex-shrink-0"
-                style={{ filter: isDark ? 'brightness(0.8)' : 'none' }}
-              />
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <h4 className="text-base font-semibold font-heading" style={{ color: isDark ? '#fff' : '#111' }}>
-                  {booking.eventTitle}
-                </h4>
-                <p className="text-xs uppercase tracking-wider mt-1" style={{ color: isDark ? '#555' : '#999' }}>
-                  {booking.date} &middot; {booking.location}
-                </p>
-                <p className="text-sm mt-1" style={{ color: isDark ? '#666' : '#888' }}>
-                  {booking.seats.length} seat{booking.seats.length > 1 ? 's' : ''} &middot; {booking.tier} &middot;{' '}
-                  <span className="font-mono font-semibold" style={{ color: '#7DA8CF' }}>₹{booking.total.toLocaleString()}</span>
-                </p>
-              </div>
-
-              {/* Actions */}
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status={booking.status} />
-
-                {booking.status === 'upcoming' && (
-                  <>
-                    <button
-                      onClick={() => setCancelModal(booking.id)}
-                      className="text-xs uppercase tracking-wider py-2 px-4 rounded border-none cursor-pointer font-bold"
-                      style={{ background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="text-xs uppercase tracking-wider py-2 px-4 rounded border-none cursor-pointer font-bold"
-                      style={{ background: '#7DA8CF', color: '#000' }}
-                    >
-                      Resell
-                    </button>
-                  </>
-                )}
-
-                {booking.status === 'completed' && (
-                  <button
-                    className="text-xs uppercase tracking-wider py-2 px-4 rounded border-none cursor-pointer font-bold flex items-center gap-1"
-                    style={{ background: '#7DA8CF', color: '#000' }}
-                  >
-                    <Ticket className="w-3 h-3" /> e-Ticket
-                  </button>
-                )}
-              </div>
-            </motion.div>
+              booking={booking}
+              isDark={isDark}
+              onCancel={setCancelModal}
+              onQR={setQrModal}
+              onResell={setResellModal}
+            />
           ))}
         </AnimatePresence>
 
         {filtered.length === 0 && (
-          <div className="text-center py-20">
-            <Ticket className="w-12 h-12 mx-auto mb-4" style={{ color: isDark ? '#333' : '#ccc' }} />
-            <p style={{ color: isDark ? '#555' : '#999' }}>No bookings found</p>
+          <div className="text-center py-20 rounded-xl border" style={{ borderColor: isDark ? '#1a1a1a' : '#eee', background: isDark ? '#0a0a0a' : '#fafafa' }}>
+            <Ticket className="w-16 h-16 mx-auto mb-4" style={{ color: isDark ? '#1a1a1a' : '#e5e5e5' }} />
+            <p className="text-lg font-heading font-bold mb-1" style={{ color: isDark ? '#444' : '#bbb' }}>No bookings found</p>
+            <p className="text-sm" style={{ color: isDark ? '#333' : '#ccc' }}>Your tickets will appear here</p>
           </div>
         )}
       </div>
+
+      {/* QR Modal */}
+      <AnimatePresence>
+        {qrModal && <TicketQRModal booking={qrModal} isDark={isDark} onClose={() => setQrModal(null)} />}
+      </AnimatePresence>
+
+      {/* Resell Modal */}
+      <AnimatePresence>
+        {resellModal && <ResellModal booking={resellModal} isDark={isDark} onClose={() => setResellModal(null)} />}
+      </AnimatePresence>
 
       {/* Cancel Modal */}
       <AnimatePresence>
@@ -153,7 +404,7 @@ export default function MyBookings() {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="rounded-lg border p-6 max-w-md w-full"
+              className="rounded-xl border p-6 max-w-md w-full"
               style={{ background: isDark ? '#0a0a0a' : '#fff', borderColor: isDark ? '#1a1a1a' : '#eee' }}
             >
               <div className="flex items-center justify-between mb-4">
@@ -162,8 +413,7 @@ export default function MyBookings() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <p className="text-sm mb-3" style={{ color: isDark ? '#888' : '#666' }}>Are you sure you want to cancel this booking?</p>
-              <div className="rounded-md p-4 mb-5" style={{ background: isDark ? '#111' : '#f5f5f5' }}>
+              <div className="rounded-lg p-4 mb-5" style={{ background: isDark ? '#111' : '#f5f5f5' }}>
                 <p className="text-xs uppercase tracking-wider font-bold mb-2" style={{ color: isDark ? '#555' : '#999' }}>Refund Policy</p>
                 <ul className="text-xs space-y-1 list-disc pl-4" style={{ color: isDark ? '#888' : '#666' }}>
                   <li>Full refund if cancelled 48+ hours before event</li>
@@ -172,18 +422,10 @@ export default function MyBookings() {
                 </ul>
               </div>
               <div className="flex gap-3">
-                <button
-                  onClick={() => setCancelModal(null)}
-                  className="flex-1 py-2.5 rounded text-sm font-bold uppercase tracking-wider cursor-pointer border"
-                  style={{ background: 'transparent', borderColor: isDark ? '#333' : '#ddd', color: isDark ? '#ccc' : '#444' }}
-                >
-                  Keep Booking
+                <button onClick={() => setCancelModal(null)} className="flex-1 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider cursor-pointer border" style={{ background: 'transparent', borderColor: isDark ? '#333' : '#ddd', color: isDark ? '#ccc' : '#444' }}>
+                  Keep
                 </button>
-                <button
-                  onClick={() => handleCancel(cancelModal)}
-                  className="flex-1 py-2.5 rounded text-sm font-bold uppercase tracking-wider border-none cursor-pointer"
-                  style={{ background: '#EF4444', color: '#fff' }}
-                >
+                <button onClick={() => handleCancel(cancelModal)} className="flex-1 py-2.5 rounded-lg text-sm font-bold uppercase tracking-wider border-none cursor-pointer" style={{ background: '#EF4444', color: '#fff' }}>
                   Confirm Cancel
                 </button>
               </div>

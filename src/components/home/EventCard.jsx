@@ -15,24 +15,30 @@ export default function EventCard({ event }) {
 
   return (
     <motion.div
-      whileHover={{ y: -4 }}
+      whileHover={{ y: -6 }}
       transition={{ duration: 0.3 }}
       className="group cursor-pointer"
     >
       <Link to={`/event/${event.id}`} className="no-underline block">
-        {/* Image with grayscale-to-color (bridgeworx signature) */}
+        {/* Image with grayscale-to-color on hover (bridgeworx signature) */}
         <div className="relative overflow-hidden rounded-lg aspect-[4/3]">
           <img
             src={event.image}
             alt={event.title}
             className="w-full h-full object-cover transition-all duration-700 ease-out"
             style={{
-              filter: isDark ? 'grayscale(100%)' : 'grayscale(30%)',
+              filter: isDark ? 'grayscale(100%) brightness(0.8)' : 'grayscale(40%)',
             }}
-            onMouseOver={(e) => { e.currentTarget.style.filter = 'grayscale(0%)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.filter = isDark ? 'grayscale(100%)' : 'grayscale(30%)'; e.currentTarget.style.transform = 'scale(1)'; }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.filter = 'grayscale(0%) brightness(1)';
+              e.currentTarget.style.transform = 'scale(1.08)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.filter = isDark ? 'grayscale(100%) brightness(0.8)' : 'grayscale(40%)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
           />
-          {/* Category badge — top right like bridgeworx */}
+          {/* Category badge — top right */}
           <div className="absolute top-3 right-3">
             <span
               className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm"
@@ -44,7 +50,7 @@ export default function EventCard({ event }) {
               {event.category}
             </span>
           </div>
-          {/* Gradient overlay at bottom */}
+          {/* Gradient at bottom */}
           <div
             className="absolute inset-x-0 bottom-0 h-1/3"
             style={{
@@ -53,7 +59,7 @@ export default function EventCard({ event }) {
           />
         </div>
 
-        {/* Content below image — bridgeworx style */}
+        {/* Content below image */}
         <div className="pt-4 pb-2">
           <h4
             className="text-lg font-bold font-heading mb-1 transition-colors duration-300 group-hover:opacity-80"
@@ -65,7 +71,7 @@ export default function EventCard({ event }) {
             className="text-xs uppercase tracking-widest mb-2 font-medium"
             style={{ color: isDark ? '#555' : '#999' }}
           >
-            {event.date}
+            {event.date} &middot; {event.location}
           </p>
           <p
             className="text-sm leading-relaxed mb-3 line-clamp-2"
@@ -74,11 +80,9 @@ export default function EventCard({ event }) {
             {event.description?.slice(0, 100)}...
           </p>
           <div className="flex items-center justify-between">
-            <span
-              className="text-sm font-mono font-bold"
-              style={{ color: '#7DA8CF' }}
-            >
-              ₹{event.price} onwards
+            <span className="text-lg font-mono font-bold" style={{ color: '#7DA8CF' }}>
+              ₹{event.price}
+              <span className="text-xs font-normal ml-1" style={{ color: isDark ? '#555' : '#999' }}>onwards</span>
             </span>
             <span className="link-more text-xs group-hover:gap-2 transition-all">
               Learn more <ArrowRight className="w-3 h-3" />
