@@ -14,6 +14,7 @@ import Waitlist from './pages/Waitlist';
 import AdminDashboard from './pages/AdminDashboard';
 import EventCalendar from './pages/EventCalendar';
 import Movies from './pages/Movies';
+import MovieDetail from './pages/MovieDetail';
 import useTheme from './store/useTheme';
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/calendar" element={<EventCalendar />} />
             <Route path="/movies" element={<Movies />} />
+            <Route path="/movie/:id" element={<MovieDetail />} />
           </Route>
         </Routes>
       </BrowserRouter>

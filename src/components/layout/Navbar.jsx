@@ -8,7 +8,6 @@ import useTheme from '../../store/useTheme';
 const navLinks = [
   { to: '/', label: 'Book Tickets' },
   { to: '/movies', label: 'Book Movies' },
-  { to: '/calendar', label: 'Calendar' },
   { to: '/resell-tickets', label: 'Resell Tickets' },
   { to: '/my-bookings', label: 'My Bookings' },
   { to: '/admin', label: 'Admin' },

@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { Search, ArrowRight, Calendar, Sparkles, Zap, Shield, Users } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import EventCard from '../components/home/EventCard';
 import { sampleEvents } from '../data/events';
 import useTheme from '../store/useTheme';
@@ -41,11 +42,10 @@ export default function Home() {
             loop
             playsInline
             className="w-full h-full object-cover"
-            style={{ filter: 'grayscale(40%) brightness(0.25)', scale: 1.1 }}
-            poster="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=1600&h=900&fit=crop"
+            style={{ filter: 'grayscale(40%) brightness(0.25)', transform: 'scale(1.1)' }}
           >
-            <source src="https://cdn.coverr.co/videos/coverr-a-crowd-at-a-concert-2559/1080p.mp4" type="video/mp4" />
-            <source src="https://static.videezy.com/system/resources/previews/000/044/478/original/concert-crowd.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/3045163/3045163-uhd_2560_1440_24fps.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/1190735/1190735-hd_1920_1080_30fps.mp4" type="video/mp4" />
           </video>
           {/* Fallback image if video doesn't load */}
           <img
@@ -110,9 +110,9 @@ export default function Home() {
                 <a href="#events" className="btn-primary no-underline flex items-center gap-2 text-base py-3 px-8">
                   Browse Events <ArrowRight className="w-5 h-5" />
                 </a>
-                <a href="#about" className="btn-outline no-underline flex items-center gap-2 py-3 px-8">
+                <Link to="/calendar" className="btn-outline no-underline flex items-center gap-2 py-3 px-8">
                   <Calendar className="w-4 h-4" /> View Calendar
-                </a>
+                </Link>
               </div>
             </motion.div>
 

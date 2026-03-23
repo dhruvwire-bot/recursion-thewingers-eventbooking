@@ -113,7 +113,7 @@ function SeatLegend({ isDark, tiers }) {
   );
 }
 
-function Seat({ index, status, isSelected, onSelect, isDark, label, tierColor }) {
+function Seat({ index, status, isSelected, onSelect, isDark, label, tierColor, dimmed }) {
   const getColor = () => {
     if (isSelected) return '#FFFFFF';
     if (status === 'booked') return isDark ? '#222' : '#ddd';
@@ -121,20 +121,20 @@ function Seat({ index, status, isSelected, onSelect, isDark, label, tierColor })
     return tierColor;
   };
 
-  const canSelect = status === 'available';
+  const canSelect = status === 'available' && !dimmed;
 
   return (
     <motion.button
       whileHover={canSelect ? { scale: 1.5, zIndex: 10 } : {}}
       whileTap={canSelect ? { scale: 0.85 } : {}}
-      onClick={() => (canSelect || isSelected) && onSelect(index)}
-      className="rounded-sm border-none transition-all duration-100 relative"
+      onClick={() => !dimmed && (status === 'available' || isSelected) && onSelect(index)}
+      className="rounded-sm border-none transition-all duration-200 relative"
       style={{
         width: 20,
         height: 20,
         background: getColor(),
-        opacity: status === 'booked' ? 0.4 : status === 'held' ? 0.2 : 1,
-        cursor: canSelect || isSelected ? 'pointer' : 'not-allowed',
+        opacity: dimmed ? 0.12 : status === 'booked' ? 0.4 : status === 'held' ? 0.2 : 1,
+        cursor: canSelect || isSelected ? 'pointer' : dimmed ? 'default' : 'not-allowed',
         boxShadow: isSelected ? '0 0 10px #fff, 0 0 3px #fff' : 'none',
         borderRadius: 3,
       }}
@@ -143,7 +143,7 @@ function Seat({ index, status, isSelected, onSelect, isDark, label, tierColor })
   );
 }
 
-function VenueSection({ section, seatStates, selectedSeats, selectSeat, isDark }) {
+function VenueSection({ section, seatStates, selectedSeats, selectSeat, isDark, highlightTier }) {
   return (
     <div className="mb-8">
       <div className="flex items-center gap-3 mb-4">
@@ -158,6 +158,7 @@ function VenueSection({ section, seatStates, selectedSeats, selectSeat, isDark }
         {section.rows.map((row, rowIdx) => {
           const rowStart = section.startIndex + section.rows.slice(0, rowIdx).reduce((sum, r) => sum + r.seats, 0);
           const seatsArr = Array.from({ length: row.seats }, (_, i) => rowStart + i);
+          const isDimmed = highlightTier && highlightTier !== row.tier;
 
           // Split into 3 blocks with 2 aisles (like BookMyShow)
           const blockSize = Math.ceil(row.seats / 3);
@@ -184,6 +185,7 @@ function VenueSection({ section, seatStates, selectedSeats, selectSeat, isDark }
                         isDark={isDark}
                         label={`${row.label}${(bi * blockSize) + i + 1}`}
                         tierColor={row.color}
+                        dimmed={isDimmed}
                       />
                     ))}
                   </div>
@@ -373,6 +375,7 @@ export default function EventDetail() {
                       selectedSeats={selectedSeats}
                       selectSeat={selectSeat}
                       isDark={isDark}
+                      highlightTier={selectedTier}
                     />
                   ))}
                 </div>
